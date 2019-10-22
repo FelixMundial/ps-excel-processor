@@ -18,7 +18,7 @@ public class ExcelUtils {
         if (length == 1) {
             resultColIndex = colLabel.charAt(0) - 'A';
         } else {
-            resultColIndex = (getColIndexFromColLabel(colLabel.substring(0, length - 1)) + 1) * 26 + getColIndexFromColLabel(colLabel.substring(length - 1));
+            resultColIndex = (getColIndexFromColLabel(colLabel.substring(0, length - 1)) + 1) * ALPHABET_LENGTH + getColIndexFromColLabel(colLabel.substring(length - 1));
         }
         return resultColIndex;
     }
@@ -34,7 +34,7 @@ public class ExcelUtils {
             if (colIndex <= (ALPHABET_LENGTH - 1)) {
                 resultColLabel = String.valueOf((char) (colIndex + 'A'));
             } else {
-                resultColLabel = getColLabelFromColIndex(colIndex / 26 - 1) + getColLabelFromColIndex(colIndex % 26);
+                resultColLabel = getColLabelFromColIndex(colIndex / ALPHABET_LENGTH - 1) + getColLabelFromColIndex(colIndex % 26);
             }
         } else {
             throw new RuntimeException("列号必须大于0");

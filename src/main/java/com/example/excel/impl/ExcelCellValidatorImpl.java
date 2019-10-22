@@ -73,6 +73,12 @@ public class ExcelCellValidatorImpl {
         }
     }
 
+    /**
+     * 总额控制入口方法，提供默认警告样式
+     * @param rowStart 总额控制圈注区域行首
+     * @param colLabel 总额控制列号（字母列号）
+     * @param formula 总额控制公式
+     */
     public void doAddCellValidation(int rowStart, String colLabel, String formula) {
         String alertStyle = "100";
         String alertTitle = "数据验证失败！";

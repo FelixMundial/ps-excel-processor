@@ -43,14 +43,13 @@ public class ExcelSplitByRowProcessorImpl {
         return excelReader;
     }
 
-
     /**
      * 报表拆分入口方法（列号为字母）
      * @param splitCondition 拆分条件
      * @param targetColumnLabel 拆分列号（字母）
      */
     public void doExcelRowSplit(String splitCondition, String targetColumnLabel) {
-        doExcelRowSplit(splitCondition, utils.getColIndexFromColLabel(targetColumnLabel));
+        doExcelRowSplit(splitCondition, utils.getColIndexFromColLabel(targetColumnLabel) + 1);
     }
 
     /**
@@ -70,8 +69,10 @@ public class ExcelSplitByRowProcessorImpl {
             int tempRowCount = sourceRowCount;
 
             Map<Integer, Map<Integer, String>> formula = getFormula(currentWorkbook, currentSheet, rowStart, tempRowCount);
+//            Map<Integer, Map<Integer, Comment>> comment = getComment(currentWorkbook, currentSheet, rowStart, tempRowCount);
             Map<Integer, Map<Integer, Comment>> comment = getComment(currentWorkbook, currentSheet, 0, tempRowCount);
 
+//            从后向前剔除数据区域中特定行
             for (int rowIndex = sourceRowCount; rowIndex >= rowStart; rowIndex--) {
                 if (null != currentSheet.getRow(rowIndex)) {
                     if (!splitCondition.equals(excelReader.getCellValue(sheetNumber, rowIndex + 1, targetColumnIndex))) {
@@ -84,11 +85,12 @@ public class ExcelSplitByRowProcessorImpl {
                 for (Integer columnIndex : formula.get(rowIndex).keySet()) {
                     currentSheet.getRow(rowIndex).getCell(columnIndex).setCellFormula(formula.get(rowIndex).get(columnIndex));
                 }
+            }
+
+            for (int rowIndex = 0; rowIndex < tempRowCount; rowIndex++) {
                 for (Integer columnIndex : comment.get(rowIndex).keySet()) {
                     currentSheet.getRow(rowIndex).getCell(columnIndex).setCellComment(comment.get(rowIndex).get(columnIndex));
                 }
-            }
-            for (int rowIndex = 0; rowIndex < tempRowCount; rowIndex++) {
                 updateFormula(currentWorkbook, currentSheet, rowIndex);
             }
 //            currentWorkbook.setForceFormulaRecalculation(true);
@@ -119,26 +121,6 @@ public class ExcelSplitByRowProcessorImpl {
     }
 
     /**
-     * 强制更新报表中所有公式
-     * @param workbook 公式所在workbook
-     * @param sheet 公式所在sheet页
-     * @param rowIndex 公式所在行号
-     */
-    private void updateFormula(Workbook workbook, Sheet sheet, int rowIndex) {
-        Row row = sheet.getRow(rowIndex);
-        Cell cell;
-        FormulaEvaluator eval = new XSSFFormulaEvaluator((XSSFWorkbook) workbook);
-        if (null != row) {
-            for (int columnIndex = row.getFirstCellNum(); columnIndex < row.getLastCellNum(); columnIndex++) {
-                cell = row.getCell(columnIndex);
-                if (cell.getCellType() == Cell.CELL_TYPE_FORMULA) {
-                    eval.evaluateFormulaCell(cell);
-                }
-            }
-        }
-    }
-
-    /**
      * 提取报表中所有公式字符串
      * @param workbook 待提取公式所在workbook
      * @param sheet 待提取公式所在sheet页
@@ -157,7 +139,7 @@ public class ExcelSplitByRowProcessorImpl {
             if (null != row) {
                 for (int columnIndex = row.getFirstCellNum(); columnIndex < row.getLastCellNum(); columnIndex++) {
                     cell = row.getCell(columnIndex);
-                    if (cell.getCellType() == Cell.CELL_TYPE_FORMULA) {
+                    if (null != cell && cell.getCellType() == Cell.CELL_TYPE_FORMULA) {
                         formulaMapInsideRow.put(columnIndex, cell.getCellFormula());
                         cellStyle = cell.getCellStyle();
                         row.removeCell(cell);
@@ -181,7 +163,7 @@ public class ExcelSplitByRowProcessorImpl {
             if (null != row) {
                 for (int columnIndex = row.getFirstCellNum(); columnIndex < row.getLastCellNum(); columnIndex++) {
                     cell = row.getCell(columnIndex);
-                    if (null != cell.getCellComment()) {
+                    if (null != cell && null != cell.getCellComment()) {
                         commentMapInsideRow.put(columnIndex, cell.getCellComment());
                     }
                 }
@@ -189,6 +171,26 @@ public class ExcelSplitByRowProcessorImpl {
             }
         }
         return commentMap;
+    }
+
+    /**
+     * 强制更新报表中所有公式
+     * @param workbook 公式所在workbook
+     * @param sheet 公式所在sheet页
+     * @param rowIndex 公式所在行号
+     */
+    private void updateFormula(Workbook workbook, Sheet sheet, int rowIndex) {
+        Row row = sheet.getRow(rowIndex);
+        Cell cell;
+        FormulaEvaluator eval = new XSSFFormulaEvaluator((XSSFWorkbook) workbook);
+        if (null != row) {
+            for (int columnIndex = row.getFirstCellNum(); columnIndex < row.getLastCellNum(); columnIndex++) {
+                cell = row.getCell(columnIndex);
+                if (null != cell && cell.getCellType() == Cell.CELL_TYPE_FORMULA) {
+                    eval.evaluateFormulaCell(cell);
+                }
+            }
+        }
     }
 
     public static void main(String[] args) {}
